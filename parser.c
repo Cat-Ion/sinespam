@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include "parser.h"
@@ -13,16 +14,16 @@ int parse(const char *msg, size_t len, char **answ, size_t *len_answ){
 	if(len == 0){
 		return -1;
 	}
+	char note[4];
 	switch(tolower(msg[0])){
 		case 's':
-			char note[4];
 			if( sscanf(msg,"set %3s %2x",note,&amplitude) != 2 ){
 				return -1;
 			}
 			halftone = string_to_semitone(note);
 			synthesis_set_frequency(halftone, amplitude);
+			break;
 /*		case 'g':
-			char note[4];
 			if( sscanf(msg,"get %3s",note) != 1){
 				return -1;
 			}
@@ -33,7 +34,8 @@ int parse(const char *msg, size_t len, char **answ, size_t *len_answ){
 			if( ret < 0 ){
 				return -1;
 			}
-			*len_answ = ret+1;*/
+			*len_answ = ret+1;
+			break;*/
 		default:
 			return -1;
 	}
