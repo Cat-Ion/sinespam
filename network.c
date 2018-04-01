@@ -61,5 +61,7 @@ int accept_new_connection(int fd) {
 
   if (FD_ISSET(fd, readfds)) {
     return accept(fd, NULL, NULL);
+  } else {
+    return -1;
   }
 }
