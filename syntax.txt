@@ -1,2 +1,2 @@
-set t [a-gA-G][#b]?[0-6] [0-9A-Fa-f][0-9A-Fa-f]\n
-get t [a-gA-G][#b]?[0-6]
+set [a-gA-G][#b]?[0-6] [0-9A-Fa-f][0-9A-Fa-f]\n
+get [a-gA-G][#b]?[0-6]\n
