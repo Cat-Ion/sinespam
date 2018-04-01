@@ -71,8 +71,8 @@ void process_new_connections(){
   }
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC,&now);
-  int fd = accept_new_connection(listen_fd);
-  while( fd != -1 ){
+  int fd;
+  while( (fd = accept_new_connection(listen_fd)) != -1 ) {
     struct client *c = &clients[num_clients];
     fprintf(stderr, "New client connection on fd %d\n", fd);
     c->fd = fd;
@@ -85,7 +85,6 @@ void process_new_connections(){
     if( num_clients >= MAX_CLIENTS ){
       return;
     }
-    fd = accept_new_connection(listen_fd);
   }
 }
 
@@ -147,17 +146,20 @@ void synthesize_sound(void) {
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
 
-  uint32_t ns = (now.tv_sec - last_sound_generation.tv_sec) * 1000000000;
-  ns += now.tv_nsec - last_sound_generation.tv_nsec;
+  double dt = (now.tv_sec - last_sound_generation.tv_sec)
+            + (now.tv_nsec - last_sound_generation.tv_nsec) * 1e-9;
 
-  uint32_t samples = ns / SAMPLING_RATE;
-  now.tv_nsec -= ns % SAMPLING_RATE;
-  if (now.tv_nsec < 0) {
-    now.tv_nsec += 1000000000;
-    now.tv_sec--;
-  }
+  uint32_t samples = (uint32_t)(dt * SAMPLING_RATE);
+  uint32_t seconds = samples / SAMPLING_RATE;
+  uint32_t nanoseconds = (samples % SAMPLING_RATE) * 1000000000 / SAMPLING_RATE;
+
+  now.tv_sec = last_sound_generation.tv_sec + seconds + (last_sound_generation.tv_nsec + nanoseconds) / 1000000000;
+  now.tv_nsec = (last_sound_generation.tv_nsec + nanoseconds) % 1000000000;
+
+  fprintf(stderr, "Sound gen: %3d.%09d - %3d.%09d\n", last_sound_generation.tv_sec % 1000, last_sound_generation.tv_nsec, now.tv_sec % 1000, now.tv_nsec);
 
   int32_t buf[128];
+  fprintf(stderr, "Generating %d samples\n", samples);
   while (samples > 0) {
     uint32_t iteration_samples = 128;
     if (iteration_samples > samples) {
@@ -168,7 +170,8 @@ void synthesize_sound(void) {
     samples -= iteration_samples;
   }
   
-  last_sound_generation = now;
+  last_sound_generation.tv_sec = now.tv_sec;
+  last_sound_generation.tv_nsec = now.tv_nsec;
 }
 
 int main() {
@@ -176,6 +179,7 @@ int main() {
   clock_gettime(CLOCK_MONOTONIC, &last_sound_generation);
 
   listen_fd = listen_on_port("1235");
+  fprintf(stderr, "Listen FD: %d\n", listen_fd);
   for (;;) {
     process_forced_disconnects(); //lucas done
     process_new_connections(); //lucas done

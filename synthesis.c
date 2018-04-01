@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "nco.h"
 #include "synthesis.h"
@@ -29,6 +30,7 @@ void synthesis_generate_sound(int32_t *buf, uint32_t num_samples) {
 int synthesis_set_frequency(int halftone, uint8_t amplitude) {
   if(halftone >= 0 && halftone < MAXIMUM_HALFTONE) {
     struct NCO *nco = &ncos[halftone];
+    fprintf(stderr, "Setting amplitude for halftone %d to %d\n", halftone, amplitude);
     if(!!nco->amplitude ^ !!amplitude) {
       num_on += amplitude ? 1 : -1;
     }

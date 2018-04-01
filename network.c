@@ -63,7 +63,7 @@ int listen_on_port(char const * port) {
 int accept_new_connection(int fd) {
   fd_set readfds;
   struct timeval timeout;
-
+  FD_ZERO(&readfds);
   FD_SET(fd, &readfds);
   timeout.tv_sec = timeout.tv_usec = 0;
   select(fd + 1, &readfds, NULL, NULL, &timeout);
