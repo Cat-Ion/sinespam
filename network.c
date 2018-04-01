@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#define LISTEN_BACKLOG 16
+
 int listen_on_port(char const * port) {
   struct addrinfo hints;
   struct addrinfo *result, *rp;
@@ -49,17 +51,19 @@ int listen_on_port(char const * port) {
     fprintf(stderr, "Could not listen\n");
     return -1;
   }
+
+  return sfd;
 }
 
 int accept_new_connection(int fd) {
   fd_set readfds;
   struct timeval timeout;
 
-  FD_SET(fd, readfds);
+  FD_SET(fd, &readfds);
   timeout.tv_sec = timeout.tv_usec = 0;
   select(fd + 1, &readfds, NULL, NULL, &timeout);
 
-  if (FD_ISSET(fd, readfds)) {
+  if (FD_ISSET(fd, &readfds)) {
     return accept(fd, NULL, NULL);
   } else {
     return -1;

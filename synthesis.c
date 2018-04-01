@@ -1,4 +1,4 @@
-#include <portaudio.h>
+#include <math.h>
 #include <stdint.h>
 
 #include "nco.h"
