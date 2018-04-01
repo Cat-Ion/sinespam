@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <stdio.h>
@@ -8,6 +9,10 @@
 #include <netdb.h>
 
 #define LISTEN_BACKLOG 16
+
+void print_error(char const *str) {
+  fprintf(stderr, "%s%s\n", str, strerror(errno));
+}
 
 int listen_on_port(char const * port) {
   struct addrinfo hints;
@@ -41,14 +46,14 @@ int listen_on_port(char const * port) {
   }
 
   if (rp == NULL) {
-    fprintf(stderr, "Could not bind\n");
+    print_error("Could not bind: ");
     return -1;
   }
 
   freeaddrinfo(result);
 
   if (listen(sfd, LISTEN_BACKLOG) == -1) {
-    fprintf(stderr, "Could not listen\n");
+    print_error("Could not listen: ");
     return -1;
   }
 

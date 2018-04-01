@@ -4,8 +4,6 @@
 #include "nco.h"
 #include "synthesis.h"
 
-#define SAMPLING_RATE 48000
-
 static struct NCO ncos[MAXIMUM_HALFTONE];
 static int num_on = 0;
 

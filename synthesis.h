@@ -4,6 +4,7 @@ struct frequency_data {
   float amplitude;
 };
 
+#define SAMPLING_RATE 48000
 #define MAXIMUM_HALFTONE (7*12)
 
 void synthesis_init(void);

@@ -130,11 +130,38 @@ void process_client_input(void) {
   }
 }
 
+struct timespec last_sound_generation;
 void synthesize_sound(void) {
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+
+  uint32_t ns = (now.tv_sec - last_sound_generation.tv_sec) * 1000000000;
+  ns += now.tv_nsec - last_sound_generation.tv_nsec;
+
+  uint32_t samples = ns / SAMPLING_RATE;
+  now.tv_nsec -= ns % SAMPLING_RATE;
+  if (now.tv_nsec < 0) {
+    now.tv_nsec += 1000000000;
+    now.tv_sec--;
+  }
+
+  int32_t buf[128];
+  while (samples > 0) {
+    uint32_t iteration_samples = 128;
+    if (iteration_samples > samples) {
+      iteration_samples = samples;
+    }
+    synthesis_generate_sound(&buf[0], iteration_samples);
+    write(1, &buf[0], iteration_samples * sizeof(uint32_t));
+    samples -= iteration_samples;
+  }
+  
+  last_sound_generation = now;
 }
 
 int main() {
   synthesis_init();
+  clock_gettime(CLOCK_MONOTONIC, &last_sound_generation);
 
   listen_fd = listen_on_port("1235");
   for (;;) {
