@@ -1,10 +1,15 @@
+#ifndef SYNTHESIS_H
+#define SYNTHESIS_H
 struct frequency_data {
   float amplitude;
-  float phase_at_zero;
-} 
+};
 
-const int maximum_halftone = 7 * 12;
+#define MAXIMUM_HALFTONE (7*12)
 
-void set_frequency(int halftone, struct frequency_data const *data);
-bool get_frequency(int halftone, struct frequency_data *data);
+void synthesis_init(void);
 
+void synthesis_generate_sound(int32_t *buf, uint32_t num_samples);
+
+int synthesis_set_frequency(int halftone, uint8_t amplitude);
+int synthesis_get_frequency(int halftone, uint8_t *amplitude);
+#endif
