@@ -1,6 +1,8 @@
 #include "parser.h"
 #include "synthesis.h"
 
+int string_to_semitone(char *note);
+
 int parse(const char *msg, size_t len, char **answ, size_t *len_answ){
 	*answ = NULL;
 	*len_answ = 0;
