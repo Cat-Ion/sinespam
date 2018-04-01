@@ -8,6 +8,7 @@
 int string_to_semitone(char *note);
 
 int parse(const char *msg, size_t len, char **answ, size_t *len_answ){
+	fprintf(stderr,"parsing %s\n",msg);
 	*answ = NULL;
 	*len_answ = 0;
 	unsigned int amplitude;
@@ -23,6 +24,7 @@ int parse(const char *msg, size_t len, char **answ, size_t *len_answ){
 			}
 			halftone = string_to_semitone(note);
 			synthesis_set_frequency(halftone,(uint8_t) amplitude);
+			fprintf(stderr,"set halftone %d to amplitude %d\n",halftone,amplitude);
 			break;
 /*		case 'g':
 			if( sscanf(msg,"get %3s",note) != 1){

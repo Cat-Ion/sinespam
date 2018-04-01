@@ -78,6 +78,8 @@ void process_new_connections(){
     c->fd = fd;
     c->last_read = now;
     c->last_write = now;
+    c->in_length = 0;
+    c->out_length = 0;
     if( fd > max_fd ){
       max_fd = fd;
     }
