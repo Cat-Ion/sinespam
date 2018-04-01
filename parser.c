@@ -1,3 +1,5 @@
+#include <stdint.h>
+#include <stdlib.h>
 #include "parser.h"
 #include "synthesis.h"
 
