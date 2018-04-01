@@ -30,62 +30,63 @@ struct client {
 } clients[MAX_CLIENTS];
 
 void force_disconnect_client(int i, bool update_max_fd){
-	struct client *c = &clients[i];
-	close(c->fd);
-	num_clients--;
-	memmove(&clients[i],&clients[i+1],sizeof(struct client)*(num_clients-i));
-	if( update_max_fd ){
-		max_fd = 0;
-		for(int k=0;k<num_clients;++k){
-			int myfd = clients[k].fd;
-			if( myfd > max_fd ){
-				max_fd = myfd;
-			}
-		}
-	}
+  struct client *c = &clients[i];
+  close(c->fd);
+  num_clients--;
+  memmove(&clients[i],&clients[i+1],sizeof(struct client)*(num_clients-i));
+  if( update_max_fd ){
+    max_fd = 0;
+    for(int k=0;k<num_clients;++k){
+      int myfd = clients[k].fd;
+      if( myfd > max_fd ){
+        max_fd = myfd;
+      }
+    }
+  }
 }
 
 void process_forced_disconnects(){
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC,&now);
-	int my_max_fd=0;
-	for(int i=0;i<num_clients;++i){
-		struct client *c = &clients[i];
-		bool read_timeout = ( now.tv_sec - c->last_read.tv_sec ) > DISCONNECT_TIMEOUT;
-		bool write_timeout = ( now.tv_sec - c->last_write.tv_sec ) > DISCONNECT_TIMEOUT;
-		if( read_timeout || write_timeout ){
-			force_disconnect_client(i,false);
-			i--;
-		}else{
-			if(my_max_fd < c->fd){
-				my_max_fd = c->fd;
-			}
-		}
-	}
-	max_fd = my_max_fd;
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC,&now);
+  int my_max_fd=0;
+  for(int i=0;i<num_clients;++i){
+    struct client *c = &clients[i];
+    bool read_timeout = ( now.tv_sec - c->last_read.tv_sec ) > DISCONNECT_TIMEOUT;
+    bool write_timeout = ( now.tv_sec - c->last_write.tv_sec ) > DISCONNECT_TIMEOUT;
+    if( read_timeout || write_timeout ){
+      force_disconnect_client(i,false);
+      i--;
+    }else{
+      if(my_max_fd < c->fd){
+        my_max_fd = c->fd;
+      }
+    }
+  }
+  max_fd = my_max_fd;
 }
 
 void process_new_connections(){
-	if( num_clients >= MAX_CLIENTS ){
-		return;
-	}
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC,&now);
-	int fd = accept_new_connection(listen_fd);
-	while( fd != -1 ){
-		struct client *c = &clients[num_clients];
-		c->fd = fd;
-		c->last_read = now;
-		c->last_write = now;
-		if( fd > max_fd ){
-			max_fd = fd;
-		}
-		num_clients++;
-		if( num_clients >= MAX_CLIENTS ){
-			return;
-		}
-		fd = accept_new_connection(listen_fd);
-	}
+  if( num_clients >= MAX_CLIENTS ){
+    return;
+  }
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC,&now);
+  int fd = accept_new_connection(listen_fd);
+  while( fd != -1 ){
+    struct client *c = &clients[num_clients];
+    fprintf(stderr, "New client connection on fd %d\n", fd);
+    c->fd = fd;
+    c->last_read = now;
+    c->last_write = now;
+    if( fd > max_fd ){
+      max_fd = fd;
+    }
+    num_clients++;
+    if( num_clients >= MAX_CLIENTS ){
+      return;
+    }
+    fd = accept_new_connection(listen_fd);
+  }
 }
 
 void read_from_client(int client_index) {
@@ -93,6 +94,7 @@ void read_from_client(int client_index) {
   struct client *c = &clients[client_index];
   int recv_len = recv(c->fd, c->in_buffer + c->in_length, BUFFER_SIZE - c->in_length, MSG_DONTWAIT);
   clock_gettime(CLOCK_MONOTONIC, &now);
+  fprintf(stderr, "Read %d bytes\n", recv_len);
   if (recv_len > 0) {
     int start = c->in_length;
     c->in_length += recv_len;
@@ -114,17 +116,27 @@ void read_from_client(int client_index) {
         i = -1;
       }
     }
+  } else {
+    force_disconnect_client(client_index, true);
   }
 }
 
 void process_client_input(void) {
   struct timeval timeout;
-  timeout.tv_sec = timeout.tv_usec = 0;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 10000;
+  
+  for(size_t ci = 0; ci < num_clients; ci++) {
+    FD_SET(clients[ci].fd, &read_fds);
+    FD_SET(clients[ci].fd, &write_fds);
+  }
+
   select(max_fd + 1, &read_fds, &write_fds, 0, &timeout);
 
   for(size_t ci = 0; ci < num_clients; ci++) {
     struct client *c = &clients[ci];
     if (FD_ISSET(c->fd, &read_fds)) {
+      fprintf(stderr, "Can read from client %d\n", ci);
       read_from_client(ci);
     }
   }
